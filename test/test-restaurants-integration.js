@@ -118,16 +118,20 @@ describe('Restaurants API resource', function() {
       // need to have access to mutate and access `res` across
       // `.then()` calls below, so declare it here so can modify in place
       let res;
+      // this should be quering but it is not
       return chai.request(app)
         .get('/restaurants')
+        // pass down _res from get
         .then(function(_res) {
           // so subsequent .then blocks can access response object
           res = _res;
           expect(res).to.have.status(200);
           // otherwise our db seeding didn't work
           expect(res.body.restaurants).to.have.length.of.at.least(1);
+          // database query here
           return Restaurant.count();
         })
+        // query this
         .then(function(count) {
           expect(res.body.restaurants).to.have.length.of(count);
         });
@@ -138,9 +142,12 @@ describe('Restaurants API resource', function() {
       // Strategy: Get back all restaurants, and ensure they have expected keys
 
       let resRestaurant;
+      // a promise (everything passed into)
       return chai.request(app)
         .get('/restaurants')
         .then(function(res) {
+          // more of function than chai/middleware
+          // expect is a chai function
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body.restaurants).to.be.a('array');
@@ -173,6 +180,10 @@ describe('Restaurants API resource', function() {
     // right keys, and that `id` is there (which means
     // the data was inserted into db)
     it('should add a new restaurant', function() {
+      // three different object
+      // 1. new created from faker
+      // 2. res from post, assigned an id - - easy to read version
+      // 3. actually stored - harder to read
 
       const newRestaurant = generateRestaurantData();
       let mostRecentGrade;
@@ -191,7 +202,8 @@ describe('Restaurants API resource', function() {
           expect(res.body.id).to.not.be.null;
           expect(res.body.cuisine).to.equal(newRestaurant.cuisine);
           expect(res.body.borough).to.equal(newRestaurant.borough);
-
+          
+          // review: testing
           mostRecentGrade = newRestaurant.grades.sort(
             (a, b) => b.date - a.date)[0].grade;
 
@@ -224,19 +236,23 @@ describe('Restaurants API resource', function() {
       };
 
       return Restaurant
+        // update a random entry
         .findOne()
         .then(function(restaurant) {
+          // passing in a new key
           updateData.id = restaurant.id;
 
           // make request then inspect it to make sure it reflects
           // data we sent
           return chai.request(app)
             .put(`/restaurants/${restaurant.id}`)
+            // 
             .send(updateData);
         })
         .then(function(res) {
+          // review: console.log(res) -> see res
           expect(res).to.have.status(204);
-
+          // Rest in database
           return Restaurant.findById(updateData.id);
         })
         .then(function(restaurant) {
@@ -260,10 +276,14 @@ describe('Restaurants API resource', function() {
         .findOne()
         .then(function(_restaurant) {
           restaurant = _restaurant;
+          // return status code of server
+          // taking res send it to next then
           return chai.request(app).delete(`/restaurants/${restaurant.id}`);
         })
         .then(function(res) {
+          // console log to see status code
           expect(res).to.have.status(204);
+          // searching on db, sending result of search into next then
           return Restaurant.findById(restaurant.id);
         })
         .then(function(_restaurant) {
